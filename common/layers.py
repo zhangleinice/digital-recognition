@@ -5,7 +5,6 @@ from common.gradient import softmax, cross_entropy_error
 from common.util import im2col, col2im
 
 # f(x) = x > 0 ? x : 0;
-# dx = dout > 0 ? 1 * dout: 0
 class ReLU:
     def __init__(self):
         # 布尔数组
@@ -72,7 +71,7 @@ class Affine:
         return dx
 
 
-# （y1 - t1, y2 - t2）
+# softmax 和 交叉熵误差
 class SoftmaxWithLoss:
     def __init__(self):
         self.y = None  # 神经网络输出
@@ -87,14 +86,11 @@ class SoftmaxWithLoss:
         self.loss = cross_entropy_error(self.y, self.t)
         return self.loss
 
-    # def backward(self, dout = 1):
-    #     bach_size = self.t.shape[0]
-    #     dx = (self.y - self.t) / bach_size
-    #     return dx
-
+    # 监督数据的表示方式：one-hot encoding:[0, 1, 0]和 class labels: 1
     def backward(self, dout=1):
         batch_size = self.t.shape[0]
-        if self.t.size == self.y.size:  # 监督数据是one-hot-vector的情况
+        # 监督数据的长度 = 神经网络输出时候，表示是 one-hot encoding
+        if self.t.size == self.y.size:  
             dx = (self.y - self.t) / batch_size
         else:
             dx = self.y.copy()
@@ -106,8 +102,7 @@ class SoftmaxWithLoss:
 
 
 
-# 神经网络优化方式
-# 在学习的过程中随机删除神经元
+# 在学习的过程中随机删除神经元，减少过拟合
 class Dropout:
     def __init__(self, dropout_ratio=0.5):
         self.dropout_ratio = dropout_ratio

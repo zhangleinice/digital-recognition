@@ -1,3 +1,4 @@
+# 加深网络，提升精确度
 import sys, os
 sys.path.append(os.pardir)  
 import pickle

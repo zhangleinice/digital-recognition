@@ -1,11 +1,5 @@
 # 优化器
-
-# 对于Python中的可变数据类型（列表，字典）来说，+= 和 ..=..+..是不同的
-# 加等是直接在变量的值上面进行操作，会修改了原来变量的值
-# 先等后加会重新分配一个内存空间，不会再原有的变量值上面进行操作。
-
 import numpy as np
-
 
 # 缺点：梯度的方向没有指向最小值的方向
 class SGD:
@@ -59,9 +53,8 @@ class AdaGrad:
             params[key] -= self.lr * grads[key] / (np.sqrt(self.h[key]) + 1e-7)
 
 
+
 # 结合了AdsGrad和Momentum的优点
-
-
 class Adam:
 
     def __init__(self, lr=0.001, beta1=0.9, beta2=0.999):
