@@ -1,5 +1,6 @@
 # 神经网络层
-
+import sys, os
+sys.path.append(os.pardir) 
 import numpy as np
 from common.gradient import softmax, cross_entropy_error
 from common.util import im2col, col2im
@@ -100,10 +101,109 @@ class SoftmaxWithLoss:
         return dx
 
 
+# 卷积计算（图像 * 滤波层）
+class Convolution:
+    # W 滤波器(权重)
+    def __init__(self, W, b, stride=1, pad=0):
+        self.W = W
+        self.b = b
+        self.stride = stride
+        self.pad = pad
+        
+        # 中间数据（backward时使用）
+        self.x = None   
+        self.col = None
+        self.col_W = None
+        
+        # 权重和偏置参数的梯度
+        self.dW = None
+        self.db = None
+
+    def forward(self, x):
+        FN, C, FH, FW = self.W.shape
+        N, C, H, W = x.shape
+        out_h = 1 + int((H + 2*self.pad - FH) / self.stride)
+        out_w = 1 + int((W + 2*self.pad - FW) / self.stride)
+
+        # im2col: 将 x 4维转化为2维
+        col = im2col(x, FH, FW, self.stride, self.pad)
+        # 将滤波器 W 转化为2维
+        col_W = self.W.reshape(FN, -1).T
+        # 计算加权和
+        out = np.dot(col, col_W) + self.b
+        # 还原为4维形状
+        out = out.reshape(N, out_h, out_w, -1).transpose(0, 3, 1, 2)
+
+        self.x = x
+        self.col = col
+        self.col_W = col_W
+
+        return out
+    
+    def backward(self, dout):
+        FN, C, FH, FW = self.W.shape
+        dout = dout.transpose(0,2,3,1).reshape(-1, FN)
+
+        self.db = np.sum(dout, axis=0)
+        self.dW = np.dot(self.col.T, dout)
+        self.dW = self.dW.transpose(1, 0).reshape(FN, C, FH, FW)
+
+        dcol = np.dot(dout, self.col_W.T)
+        dx = col2im(dcol, self.x.shape, FH, FW, self.stride, self.pad)
+
+        return dx
 
 
-# 在学习的过程中随机删除神经元，减少过拟合
+
+# max池化 缩小高，长方向运算
+class Pooling:
+    def __init__(self, pool_h, pool_w, stride=1, pad=0):
+        self.pool_h = pool_h
+        self.pool_w = pool_w
+        self.stride = stride
+        self.pad = pad
+        
+        self.x = None
+        self.arg_max = None
+
+    def forward(self, x):
+        N, C, H, W = x.shape
+        out_h = int(1 + (H - self.pool_h) / self.stride)
+        out_w = int(1 + (W - self.pool_w) / self.stride)
+
+        # x ==> 矩阵
+        col = im2col(x, self.pool_h, self.pool_w, self.stride, self.pad)
+        col = col.reshape(-1, self.pool_h*self.pool_w)
+
+        arg_max = np.argmax(col, axis=1)
+        # Max池化（展开后每行的最大值）
+        out = np.max(col, axis=1)
+        # 还原输出形状
+        out = out.reshape(N, out_h, out_w, C).transpose(0, 3, 1, 2)
+
+        self.x = x
+        self.arg_max = arg_max
+
+        return out
+
+    def backward(self, dout):
+        dout = dout.transpose(0, 2, 3, 1)
+        
+        pool_size = self.pool_h * self.pool_w
+        dmax = np.zeros((dout.size, pool_size))
+        dmax[np.arange(self.arg_max.size), self.arg_max.flatten()] = dout.flatten()
+        dmax = dmax.reshape(dout.shape + (pool_size,)) 
+        
+        dcol = dmax.reshape(dmax.shape[0] * dmax.shape[1] * dmax.shape[2], -1)
+        dx = col2im(dcol, self.x.shape, self.pool_h, self.pool_w, self.stride, self.pad)
+        
+        return dx
+
+    
+# 在训练数据时，随机地将一些神经元的输出设为零
+# 这种随机性和多样性有助于减少神经网络对训练数据过拟合
 class Dropout:
+    # 丢弃50%的神经元
     def __init__(self, dropout_ratio=0.5):
         self.dropout_ratio = dropout_ratio
         self.mask = None
@@ -111,12 +211,15 @@ class Dropout:
     def forward(self, x, train_flg=True):
         if train_flg:
             self.mask = np.random.rand(*x.shape) > self.dropout_ratio
+            # 随机清零神经元
             return x * self.mask
         else:
+            # 测试数据不再随机丢弃，保持与训练时相似的输出分布有助于更好地评估模型的性能。
             return x * (1.0 - self.dropout_ratio)
 
     def backward(self, dout):
         return dout * self.mask
+
 
 
 class BatchNormalization:
@@ -198,167 +301,3 @@ class BatchNormalization:
         self.dbeta = dbeta
         
         return dx
-
-
-class Convolution:
-    def __init__(self, W, b, stride=1, pad=0):
-        self.W = W
-        self.b = b
-        self.stride = stride
-        self.pad = pad
-        
-        # 中间数据（backward时使用）
-        self.x = None   
-        self.col = None
-        self.col_W = None
-        
-        # 权重和偏置参数的梯度
-        self.dW = None
-        self.db = None
-
-    def forward(self, x):
-        FN, C, FH, FW = self.W.shape
-        N, C, H, W = x.shape
-        out_h = 1 + int((H + 2*self.pad - FH) / self.stride)
-        out_w = 1 + int((W + 2*self.pad - FW) / self.stride)
-
-        col = im2col(x, FH, FW, self.stride, self.pad)
-        col_W = self.W.reshape(FN, -1).T
-
-        out = np.dot(col, col_W) + self.b
-        out = out.reshape(N, out_h, out_w, -1).transpose(0, 3, 1, 2)
-
-        self.x = x
-        self.col = col
-        self.col_W = col_W
-
-        return out
-    
-    def backward(self, dout):
-        FN, C, FH, FW = self.W.shape
-        dout = dout.transpose(0,2,3,1).reshape(-1, FN)
-
-        self.db = np.sum(dout, axis=0)
-        self.dW = np.dot(self.col.T, dout)
-        self.dW = self.dW.transpose(1, 0).reshape(FN, C, FH, FW)
-
-        dcol = np.dot(dout, self.col_W.T)
-        dx = col2im(dcol, self.x.shape, FH, FW, self.stride, self.pad)
-
-        return dx
-
-
-
-
-class Pooling:
-    def __init__(self, pool_h, pool_w, stride=1, pad=0):
-        self.pool_h = pool_h
-        self.pool_w = pool_w
-        self.stride = stride
-        self.pad = pad
-        
-        self.x = None
-        self.arg_max = None
-
-    def forward(self, x):
-        N, C, H, W = x.shape
-        out_h = int(1 + (H - self.pool_h) / self.stride)
-        out_w = int(1 + (W - self.pool_w) / self.stride)
-
-        col = im2col(x, self.pool_h, self.pool_w, self.stride, self.pad)
-        col = col.reshape(-1, self.pool_h*self.pool_w)
-
-        arg_max = np.argmax(col, axis=1)
-        out = np.max(col, axis=1)
-        out = out.reshape(N, out_h, out_w, C).transpose(0, 3, 1, 2)
-
-        self.x = x
-        self.arg_max = arg_max
-
-        return out
-
-    def backward(self, dout):
-        dout = dout.transpose(0, 2, 3, 1)
-        
-        pool_size = self.pool_h * self.pool_w
-        dmax = np.zeros((dout.size, pool_size))
-        dmax[np.arange(self.arg_max.size), self.arg_max.flatten()] = dout.flatten()
-        dmax = dmax.reshape(dout.shape + (pool_size,)) 
-        
-        dcol = dmax.reshape(dmax.shape[0] * dmax.shape[1] * dmax.shape[2], -1)
-        dx = col2im(dcol, self.x.shape, self.pool_h, self.pool_w, self.stride, self.pad)
-        
-        return dx
-
-# 卷积层
-# class Convolution:
-#     # W 滤波器(权重)
-#     def __init__(self, W, b, stribe=1, pad=0):
-#         self.W = W
-#         self.b = b
-#         self.stribe = stribe
-#         self.pad = pad
-    
-#     def forward(self, x):
-#         FN, C, FH, FW = self.W.shape
-#         N, C, H, W = x.shape
-#         out_h = int(1 + (H + 2* self.pad - FH)/self.stribe)
-#         out_w = int(1 + (W + 2* self.pad - FW)/self.stribe)
-
-#         col = im2col(x, FH, FW, self.stribe, self.pad)
-#         col_W = self.W.reshape(FN, -1).T
-#         out = np.dot(col, col_W) + self.b
-
-#         out = out.reshape(N, out_h, out_w, -1).transpose(0, 3, 1, 2)
-#         return out
-
-#     def backward(self, dout):
-#         FN, C, FH, FW = self.W.shape
-#         dout = dout.transpose(0,2,3,1).reshape(-1, FN)
-
-#         self.db = np.sum(dout, axis=0)
-#         self.dW = np.dot(self.col.T, dout)
-#         self.dW = self.dW.transpose(1, 0).reshape(FN, C, FH, FW)
-
-#         dcol = np.dot(dout, self.col_W.T)
-#         dx = col2im(dcol, self.x.shape, FH, FW, self.stride, self.pad)
-
-#         return dx
-    
-# 池化层
-# class Pooling:
-#     def __init__(self, pool_h, pool_w, stride=1, pad=0):
-#         self.pool_h = pool_h
-#         self.pool_w = pool_w
-#         self.stride = stride
-#         self.pad = pad
-
-#     def forward(self, x):
-#         N, C, H, W = x.shape
-#         out_h = int(1 + (H - self.pool_h) / self.stride)
-#         out_w = int(1 + (W - self.pool_w) / self.stride)
-
-#         # 按通道展开为一行
-#         col = im2col(x, self.pool_h, self.pool_w, self.stride, self.pad)
-#         col = col.reshape(-1, self.pool_h*self.pool_w)
-
-#         # 求各行最大值，Max池化
-#         out = np.max(col, axis=1)
-
-#         # (N, out_h, out_w, C) ==> (N, C, out_h, out_w)
-#         out = out.reshape(N, out_h, out_w, C).transpose(0, 3, 1, 2)
-
-#         return out
-    
-#     def backward(self, dout):
-#         dout = dout.transpose(0, 2, 3, 1)
-        
-#         pool_size = self.pool_h * self.pool_w
-#         dmax = np.zeros((dout.size, pool_size))
-#         dmax[np.arange(self.arg_max.size), self.arg_max.flatten()] = dout.flatten()
-#         dmax = dmax.reshape(dout.shape + (pool_size,)) 
-        
-#         dcol = dmax.reshape(dmax.shape[0] * dmax.shape[1] * dmax.shape[2], -1)
-#         dx = col2im(dcol, self.x.shape, self.pool_h, self.pool_w, self.stride, self.pad)
-        
-#         return dx

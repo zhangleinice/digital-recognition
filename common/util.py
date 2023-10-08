@@ -1,6 +1,6 @@
 import numpy as np
 
-# 图像展开为矩阵
+# 图像 ==> 列（矩阵）
 def im2col(input_data, filter_h, filter_w, stride=1, pad=0):
     """
 
@@ -43,6 +43,7 @@ def im2col(input_data, filter_h, filter_w, stride=1, pad=0):
     return col
 
 
+# 列（矩阵） ==> 图像
 def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
     """
 

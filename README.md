@@ -1,5 +1,5 @@
 # digital-recognition
-深度学习训练手写数字识别
+深度学习CNN训练手写数字识别
 
 ## 网络结构如下所示
     conv - relu - conv- relu - pool -  
@@ -17,7 +17,11 @@
     affine: 加权和 A = X·W + b  
     dropout: 随机删减神经元，减少过拟合  
 
-## optimizer
-    使用Adam
+## 优化
+    卷积层基于3 * 3的小型滤波器  
+    激活函数为ReLU，使用 He初始值  
+    全连接层后面使用Dropout  
+    optimizer使用Adam优化  
+    
 
 

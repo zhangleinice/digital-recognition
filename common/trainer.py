@@ -12,10 +12,13 @@ class Trainer:
                  evaluate_sample_num_per_epoch=None, verbose=True):
         self.network = network
         self.verbose = verbose
+
+        # 训练数据，测试数据
         self.x_train = x_train
         self.t_train = t_train
         self.x_test = x_test
         self.t_test = t_test
+
         self.epochs = epochs
         self.batch_size = mini_batch_size
         self.evaluate_sample_num_per_epoch = evaluate_sample_num_per_epoch
@@ -23,6 +26,7 @@ class Trainer:
         # optimzer
         optimizer_class_dict = {'sgd':SGD, 'momentum':Momentum, 'nesterov':Nesterov,
                                 'adagrad':AdaGrad, 'rmsprpo':RMSprop, 'adam':Adam}
+        
         self.optimizer = optimizer_class_dict[optimizer.lower()](**optimizer_param)
         
         self.train_size = x_train.shape[0]
@@ -31,6 +35,7 @@ class Trainer:
         self.current_iter = 0
         self.current_epoch = 0
         
+        # 记录损失和准确率
         self.train_loss_list = []
         self.train_acc_list = []
         self.test_acc_list = []
