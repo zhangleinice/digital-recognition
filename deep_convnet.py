@@ -28,7 +28,7 @@ class DeepConvNet:
                  hidden_size=50, output_size=10):
         
         
-        # 各层的神经元平均与前一层的几个神经元有连接（TODO:自动计算）
+        # 各层的神经元个数
         pre_node_nums = np.array([1*3*3, 16*3*3, 16*3*3, 32*3*3, 32*3*3, 64*3*3, 64*4*4, hidden_size])
 
         # 当激活函数ReLU时，使用 He初始值

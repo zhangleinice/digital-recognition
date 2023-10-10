@@ -54,7 +54,7 @@ class AdaGrad:
 
 
 
-# 结合了AdsGrad和Momentum的优点
+# 缝合怪：AdsGrad + Momentum
 class Adam:
 
     def __init__(self, lr=0.001, beta1=0.9, beta2=0.999):
