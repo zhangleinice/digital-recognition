@@ -1,7 +1,13 @@
 # digital-recognition
-深度学习CNN训练手写数字识别
+CNN数字识别
+
+## Quick Start
+    训练：python train.py
+    使用：python use.py
 
 ## 网络结构如下所示
+    这个神经网络有6个卷积层和2个全连接层，总共8个层  
+    
     conv - relu - conv- relu - pool -  
     conv - relu - conv- relu - pool -  
     conv - relu - conv- relu - pool -  

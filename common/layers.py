@@ -2,8 +2,7 @@
 import sys, os
 sys.path.append(os.pardir) 
 import numpy as np
-from common.gradient import softmax, cross_entropy_error
-from common.util import im2col, col2im
+from common.util import *
 
 # f(x) = x > 0 ? x : 0;
 class ReLU:

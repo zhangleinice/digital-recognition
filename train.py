@@ -9,10 +9,10 @@ from common.trainer import Trainer
 
 (x_train, t_train), (x_test, t_test) = load_mnist(flatten=False)
 
-network = SimpleConvNet(input_dim=(1,28,28), 
-                        conv_param = {'filter_num': 30, 'filter_size': 5, 'pad': 0, 'stride': 1},
-                        hidden_size=100, output_size=10, weight_init_std=0.01)
-# network = DeepConvNet()  
+# network = SimpleConvNet(input_dim=(1,28,28), 
+#                         conv_param = {'filter_num': 30, 'filter_size': 5, 'pad': 0, 'stride': 1},
+#                         hidden_size=100, output_size=10, weight_init_std=0.01)
+network = DeepConvNet()  
 
 trainer = Trainer(network, x_train, t_train, x_test, t_test,
                   epochs=20, mini_batch_size=100,
@@ -21,6 +21,6 @@ trainer = Trainer(network, x_train, t_train, x_test, t_test,
 trainer.train()
 
 # 保存参数
-network.save_params("params/sample_convnet_params.pkl")
-# network.save_params("params/deep_convnet_params.pkl")
+# network.save_params("params/sample_convnet_params.pkl")
+network.save_params("params/deep_convnet_params.pkl")
 print("Saved Network Parameters!")

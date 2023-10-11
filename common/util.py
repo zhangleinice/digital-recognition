@@ -1,5 +1,87 @@
 import numpy as np
 
+# 输出层处理，分类问题: logits ==> 概率分布
+def softmax(x):
+    if x.ndim == 2:
+        x = x.T
+        x = x - np.max(x, axis=0)
+        y = np.exp(x) / np.sum(np.exp(x), axis=0)
+        return y.T
+
+    x = x - np.max(x)  # 溢出对策
+    return np.exp(x) / np.sum(np.exp(x))
+
+
+# 损失函数
+# 交叉熵
+def cross_entropy_error(y, t):
+    if y.ndim == 1:
+        t = t.reshape(1, t.size)
+        y = y.reshape(1, y.size)
+
+    if t.size == y.size:
+        t = t.argmax(axis=1)
+
+    batch_size = y.shape[0]
+    return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
+
+
+# 均方误差
+def mean_squared_error(y, t):
+    return 0.5 * np.sum((y-t)**2)
+
+
+# 计算梯度
+def numerical_gradient1(f, x):
+    h = 1e-4
+    # 创建一个和 x 同样形状的零数组来存储梯度
+    grad = np.zeros_like(x)
+
+    for idx in range(x.size):
+        tmp_val = x[idx]
+
+        # f(x +h)
+        x[idx] = tmp_val + h
+        fxh1 = f(x)
+
+        # f(x - h)
+        x[idx] = tmp_val - h
+        fxh2 = f(x)
+
+        grad[idx] = (fxh1 - fxh2) / (2 * h)
+        # 还原
+        x[idx] = tmp_val
+
+    return grad
+
+
+# 数值微分计算梯度
+def numerical_gradient(f, x):
+    h = 1e-4
+    grad = np.zeros_like(x)
+
+    # 使用了 NumPy 的 nditer 来提高效率
+    it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
+    while not it.finished:
+        idx = it.multi_index
+        tmp_val = x[idx]
+        
+        # f(x + h)
+        x[idx] = float(tmp_val) + h
+        fxh1 = f(x) 
+
+        # f(x - h)
+        x[idx] = tmp_val - h
+        fxh2 = f(x)
+        grad[idx] = (fxh1 - fxh2) / (2*h)
+
+        # 还原
+        x[idx] = tmp_val
+        it.iternext()
+
+    return grad
+
+
 # 图像 ==> 列（矩阵）
 def im2col(input_data, filter_h, filter_w, stride=1, pad=0):
     """
