@@ -3,57 +3,57 @@ import sys
 sys.path.append(os.pardir)
 from data.mnist import load_mnist
 from deep_convnet import DeepConvNet  
-from PIL import Image
 import numpy as np
 from common.util import softmax
+import random
+import matplotlib.pyplot as plt
 
-# 加载模型，权重
+# 加载模型及权重
 model = DeepConvNet() 
 model.load_params("params/deep_convnet_params.pkl") 
 
 # 加载数据集
 (x_train, t_train), (x_test, t_test) = load_mnist(flatten=False, normalize=False)
 
-# 随机选择一个索引
-random_index = np.random.randint(0, len(x_test))
+# 随机选择的测试样本和标签
+test_size = x_test.shape[0]
+batch_size = random.randint(1, 10)
 
-# 获取随机选择的测试样本和标签
-img = x_test[random_index]
-label = t_test[random_index]
+batch_mask = np.random.choice(test_size, batch_size)
+imgs = x_test[batch_mask]
+labels = t_test[batch_mask]
 
+print('input: 输入的数字是', labels)
 
-# test_size = x_test.shape[0]
-# batch_size = 1
+# 展示输入图像
+def show_imgs(imgs, labels):
+    # 创建一个横向的子图
+    _, axes = plt.subplots(1, imgs.shape[0], figsize=(12, 3)) 
 
-# batch_mask = np.random.choice(test_size, batch_size)
-# x_batch = x_test[batch_mask]
-# t_batch = t_test[batch_mask]
+    for i in range(imgs.shape[0]):
+        image = imgs[i].reshape(28, 28)
+        ax = axes[i]
+        ax.imshow(image, cmap='gray')
+        ax.set_title(f"标签: {labels[i]}")
 
+    plt.show()
 
-def img_show(img):
-    pil = Image.fromarray(np.uint8(img))
-    pil.show()
-
-# image = img.reshape(28, 28)
-# img_show(image)
-
-print('输入的数字是: ', label)
+# show_imgs(imgs, labels)
 
 # 使用模型进行推理
-logits = model.predict(img.reshape(1, 1, 28, 28))
-
+logits = model.predict(imgs)
 # 概率分布
 probabilities = softmax(logits)
 
 # print(logits)
-
 # print(probabilities)
 
-max_index = np.argmax(probabilities)
+max_indexs = np.argmax(probabilities, axis=1)
+max_values = probabilities[np.arange(len(max_indexs)), max_indexs]
+max_values = [f'{value * 100:.2f}%' for value in max_values]
 
-max_value = probabilities[0][max_index]
+print(f"output: 输入的数字是{max_indexs} 的概率约为 {max_values}")
 
-print(f"输入的数字是 {max_index} 的概率接近: {max_value * 100:.2f}%")
 
 
 

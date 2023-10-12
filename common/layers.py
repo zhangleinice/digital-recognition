@@ -100,7 +100,7 @@ class SoftmaxWithLoss:
         return dx
 
 
-# 卷积计算（图像 * 滤波层）
+# 卷积层保证了数据的形状；卷积计算（图像 * 滤波层）
 class Convolution:
     # W 滤波器(权重)
     def __init__(self, W, b, stride=1, pad=0):

@@ -13,7 +13,7 @@ def softmax(x):
 
 
 # 损失函数
-# 交叉熵
+# 交叉熵 E = -∑ t*logy
 def cross_entropy_error(y, t):
     if y.ndim == 1:
         t = t.reshape(1, t.size)
@@ -26,41 +26,17 @@ def cross_entropy_error(y, t):
     return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
 
 
-# 均方误差
+# 均方误差 E = 1/2 * ∑(y -t)^2
 def mean_squared_error(y, t):
     return 0.5 * np.sum((y-t)**2)
 
 
-# 计算梯度
-def numerical_gradient1(f, x):
-    h = 1e-4
-    # 创建一个和 x 同样形状的零数组来存储梯度
-    grad = np.zeros_like(x)
-
-    for idx in range(x.size):
-        tmp_val = x[idx]
-
-        # f(x +h)
-        x[idx] = tmp_val + h
-        fxh1 = f(x)
-
-        # f(x - h)
-        x[idx] = tmp_val - h
-        fxh2 = f(x)
-
-        grad[idx] = (fxh1 - fxh2) / (2 * h)
-        # 还原
-        x[idx] = tmp_val
-
-    return grad
-
-
-# 数值微分计算梯度
+# 数值微分计算梯度 dx = f(x+h) - (x-h)/2h
 def numerical_gradient(f, x):
     h = 1e-4
     grad = np.zeros_like(x)
 
-    # 使用了 NumPy 的 nditer 来提高效率
+    # np.nditer 创建一个多维数组的迭代器对象
     it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
     while not it.finished:
         idx = it.multi_index
@@ -73,6 +49,7 @@ def numerical_gradient(f, x):
         # f(x - h)
         x[idx] = tmp_val - h
         fxh2 = f(x)
+
         grad[idx] = (fxh1 - fxh2) / (2*h)
 
         # 还原

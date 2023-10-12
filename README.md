@@ -1,32 +1,22 @@
 # digital-recognition
-CNN数字识别
+CNN数字识别，识别准确率为99.32%  
 
 ## Quick Start
-    训练：python train.py
-    使用：python use.py
+    训练：python train.py  
+    使用：python use.py  
 
 ## 网络结构如下所示
-    这个神经网络有6个卷积层和2个全连接层，总共8个层  
-    
     conv - relu - conv- relu - pool -  
     conv - relu - conv- relu - pool -  
     conv - relu - conv- relu - pool -  
     affine - relu - dropout - affine - dropout - softmax  
 
-## layers
-    卷积层conv: 保证数据的形状  
-    激活函数:  
-        - ReLU  
-        - softmax: logits ==> 概率分布  
-    损失函数: 使用交叉熵函数cross_entropy_error  
-    池化层pool: 使用Max池化。缩小高，长方向的空间运算    
-    affine: 加权和 A = X·W + b  
-    dropout: 随机删减神经元，减少过拟合  
+    这个神经网络有6个卷积层和2个全连接层，总共8个层  
 
 ## 优化
     卷积层基于3 * 3的小型滤波器  
     激活函数为ReLU，使用 He初始值  
-    全连接层后面使用Dropout  
+    全连接层后面使用Dropout，随机删减神经元，减少过拟合   
     optimizer使用Adam优化  
     
 

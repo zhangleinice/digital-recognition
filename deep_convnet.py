@@ -5,7 +5,6 @@ import pickle
 import numpy as np
 from common.layers import *
 
-
 class DeepConvNet:
     """识别率为99%以上的高精度的ConvNet
 
